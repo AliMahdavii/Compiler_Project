@@ -1,0 +1,26 @@
+// "dead" (no transition) is not drawn; every missing arrow goes there.
+digraph DFA {
+  rankdir=LR; nodesep=0.25;
+  node [shape=circle];
+  start [shape=point];
+  start -> q0;
+
+  q1 [shape=doublecircle, label="q1\nIDENTIFIER"];
+  q2 [shape=doublecircle, label="q2\nINTEGER"];
+  q3 [shape=doublecircle, label="q3\nPLUS"];
+  q4 [shape=doublecircle, label="q4\nEQUAL"];
+  q5 [shape=doublecircle, label="q5\nLPAREN"];
+  q6 [shape=doublecircle, label="q6\nRPAREN"];
+  q7 [shape=doublecircle, label="q7\nwhitespace"];
+
+  q0 -> q1 [label="letter"];
+  q0 -> q2 [label="digit"];
+  q0 -> q3 [label="+"];
+  q0 -> q4 [label="="];
+  q0 -> q5 [label="("];
+  q0 -> q6 [label=")"];
+  q0 -> q7 [label="whitespace"];
+  q1 -> q1 [label="letter, digit"];
+  q2 -> q2 [label="digit"];
+  q7 -> q7 [label="whitespace"];
+}

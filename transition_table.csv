@@ -1,0 +1,9 @@
+state,letter,digit,+,=,(,),whitespace,other,token
+q0,q1,q2,q3,q4,q5,q6,q7,dead,
+q1,q1,q1,dead,dead,dead,dead,dead,dead,IDENTIFIER
+q2,dead,q2,dead,dead,dead,dead,dead,dead,INTEGER
+q3,dead,dead,dead,dead,dead,dead,dead,dead,PLUS
+q4,dead,dead,dead,dead,dead,dead,dead,dead,EQUAL
+q5,dead,dead,dead,dead,dead,dead,dead,dead,LPAREN
+q6,dead,dead,dead,dead,dead,dead,dead,dead,RPAREN
+q7,dead,dead,dead,dead,dead,dead,q7,dead,SKIP

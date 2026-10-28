@@ -1,0 +1,34 @@
+digraph NFA {
+  rankdir=LR; nodesep=0.25;
+  node [shape=circle];
+  start [shape=point];
+  start -> S0;
+
+  S0 -> I0 [label="ε"];
+  S0 -> N0 [label="ε"];
+  S0 -> S  [label="ε"];
+  S0 -> W0 [label="ε"];
+
+  // identifier
+  I1 [shape=doublecircle];
+  I0 -> I1 [label="letter"];
+  I1 -> I1 [label="letter, digit"];
+
+  // integer
+  N1 [shape=doublecircle];
+  N0 -> N1 [label="digit"];
+  N1 -> N1 [label="digit"];
+
+  // single-character tokens
+  PLUS [shape=doublecircle]; EQUAL [shape=doublecircle];
+  LPAREN [shape=doublecircle]; RPAREN [shape=doublecircle];
+  S -> PLUS   [label="+"];
+  S -> EQUAL  [label="="];
+  S -> LPAREN [label="("];
+  S -> RPAREN [label=")"];
+
+  // whitespace (ignored)
+  W1 [shape=doublecircle];
+  W0 -> W1 [label="whitespace"];
+  W1 -> W1 [label="whitespace"];
+}
