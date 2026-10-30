@@ -1,6 +1,6 @@
-"""Dark-themed Tkinter UI for the Phase 1 manual lexer.
+"""The window for phase 1 (dark theme).
 
-The UI only calls Scanner.scan() and displays the result; there is no scanning logic here.
+It only calls Scanner.scan() and shows the result. The scanning itself is not in this file.
 """
 
 import tkinter as tk
@@ -11,12 +11,15 @@ from scanner import Scanner
 
 BASE = Path(__file__).parent
 
-# ---- colors and fonts -------------------------------------------------------
+# ---- colors and fonts ----
+# background colors
 BG, PANEL, EDITOR, BORDER = "#0e1117", "#161b22", "#0b0f14", "#2a3140"
+# text and other colors
 FG, MUTED, ACCENT, GOOD, BAD = "#e6edf3", "#8b949e", "#58a6ff", "#3fb950", "#ff7b72"
 UI_FONT, CODE_FONT = ("Segoe UI", 10), ("Consolas", 12)
 
-KIND_COLORS = {                       # token kind -> text color
+# color of each token kind (used in the editor and in the token table)
+KIND_COLORS = {
     "KEYWORD_INT": "#d2a8ff", "KEYWORD_IF": "#d2a8ff", "IDENTIFIER": "#79c0ff",
     "INTEGER": "#ffa657", "PLUS": "#7ee787", "EQUAL": "#7ee787",
     "LPAREN": "#e3b341", "RPAREN": "#e3b341",
@@ -24,7 +27,7 @@ KIND_COLORS = {                       # token kind -> text color
 
 
 def column_ids(count):
-    """Plain string ids for Treeview columns: c0, c1, ..."""
+    """Names for the table columns: c0, c1, c2 ... (plain strings)"""
     return [f"c{i}" for i in range(count)]
 
 
@@ -36,15 +39,15 @@ class LexerUI(tk.Tk):
         self.minsize(950, 620)
         self.configure(bg=BG)
         self.scanner = Scanner(BASE / "transition_table.csv")
-        self.images = []              # keep references, otherwise Tk drops the pictures
-        self.used_tags = set()        # editor tags added by the last scan
+        self.images = []              # we must keep the images in a list, otherwise tkinter deletes them
+        self.used_tags = set()        # tags the last scan added to the editor, so we can remove them next time
         self._apply_style()
         self._build_header()
-        self._build_console()         # packed at the bottom first so it is never clipped
+        self._build_console()         # the console is packed first (at the bottom) so the editor cannot hide it
         self._build_main()
         self._load_file(BASE / "samples" / "valid.ns")
 
-    # ---- look and feel ------------------------------------------------------
+    # ---- style (colors of the widgets) ----
     def _apply_style(self):
         s = ttk.Style(self)
         s.theme_use("clam")
@@ -66,7 +69,7 @@ class LexerUI(tk.Tk):
         s.configure("TScrollbar", background="#2a3140", troughcolor=PANEL, arrowcolor=MUTED, borderwidth=0)
         s.configure("TPanedwindow", background=BG)
 
-    # ---- layout -------------------------------------------------------------
+    # ---- building the window ----
     def _build_header(self):
         bar = tk.Frame(self, bg=BG)
         bar.pack(fill="x", padx=20, pady=(16, 4))
@@ -168,12 +171,13 @@ class LexerUI(tk.Tk):
         for row in self.scanner.rows:
             self.dfa_table.insert("", "end", values=[row[name] for name in self.scanner.header])
 
-    # ---- line numbers (kept in sync with the editor) ------------------------------
+    # ---- line numbers (they scroll together with the editor) ----
     def _scroll_both(self, *args):
         self.editor.yview(*args)
         self.numbers.yview(*args)
 
     def _on_editor_scroll(self, first, last):
+        # move the scrollbar and the line numbers together
         self.scrollbar.set(first, last)
         self.numbers.yview_moveto(first)
 
@@ -184,7 +188,7 @@ class LexerUI(tk.Tk):
         self.numbers.insert("1.0", "\n".join(str(i) for i in range(1, count + 1)))
         self.numbers.configure(state="disabled")
 
-    # ---- actions ----------------------------------------------------------------
+    # ---- buttons ----
     def _open(self):
         path = filedialog.askopenfilename(title="Open NovaScript+ source",
                                           filetypes=[("NovaScript+", "*.ns"), ("All files", "*.*")])
@@ -212,6 +216,7 @@ class LexerUI(tk.Tk):
         self._update_numbers()
 
     def _scan(self):
+        # get the text, scan it, then show the tokens, the colors and the console
         tokens, errors = self.scanner.scan(self.editor.get("1.0", "end-1c"))
         self._show_tokens(tokens)
         self._color_editor(tokens, errors)
@@ -224,7 +229,7 @@ class LexerUI(tk.Tk):
             self.status.configure(text=f"● {len(tokens)} tokens · no errors", fg=GOOD)
         self._write_console(lines)
 
-    # ---- showing results --------------------------------------------------------
+    # ---- showing the results ----
     def _show_tokens(self, tokens):
         self.token_table.delete(*self.token_table.get_children())
         for number, t in enumerate(tokens, start=1):
@@ -233,9 +238,11 @@ class LexerUI(tk.Tk):
         self.token_table.column("c2", width=130)
 
     def _color_editor(self, tokens, errors):
+        # remove the colors of the last scan first
         for tag in self.used_tags:
             self.editor.tag_remove(tag, "1.0", "end")
         self.used_tags = {"error"}
+        # color every token, then mark every error
         for t in tokens:
             self.editor.tag_configure(t.kind, foreground=KIND_COLORS.get(t.kind, FG))
             self._tag(t.kind, t.line, t.column, len(t.lexeme))
@@ -245,6 +252,7 @@ class LexerUI(tk.Tk):
         self.editor.tag_raise("error")
 
     def _tag(self, name, line, column, length):
+        # our columns start at 1 but tkinter starts at 0, so we use column - 1
         start = f"{line}.{column - 1}"
         self.editor.tag_add(name, start, f"{start}+{length}c")
 

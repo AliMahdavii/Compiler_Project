@@ -1,4 +1,4 @@
-// "dead" (no transition) is not drawn; every missing arrow goes there.
+// the dead state is not drawn. Any arrow that is missing goes to dead.
 digraph DFA {
   rankdir=LR; nodesep=0.25;
   node [shape=circle];

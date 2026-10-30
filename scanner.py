@@ -1,7 +1,7 @@
-"""Phase 1: manual, table-driven scanner for the NovaScript+ subset.
+"""Phase 1 scanner (lexical analyzer), written by hand.
 
-All state transitions live in transition_table.csv (loaded at run time).
-The scanner never decides transitions with if/else; it only looks them up:
+The DFA table is read from transition_table.csv when the program runs.
+We don't use if/else to decide the states. We just look up the next state in the table:
 
     next_state = table[(state, character_class)]
 """
@@ -12,10 +12,12 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
+# keywords look like normal identifiers, so we check this dict after scanning a word
 KEYWORDS = {"int": "KEYWORD_INT", "if": "KEYWORD_IF"}
-START, DEAD, SKIP = "q0", "dead", "SKIP"   # start state, "no transition", "ignore this lexeme"
+# q0 = start state, dead = "no way to continue", SKIP = throw this lexeme away (whitespace)
+START, DEAD, SKIP = "q0", "dead", "SKIP"
 
-# Character -> column name of the table. Any other character is "other".
+# every character has a class (a column in the csv). Anything not listed here is "other"
 CHAR_CLASS = {
     **{c: "letter" for c in string.ascii_letters + "_"},
     **{c: "digit" for c in string.digits},
@@ -24,6 +26,7 @@ CHAR_CLASS = {
 }
 
 
+# one token: its kind, the text, and where it is in the code
 @dataclass(frozen=True)
 class Token:
     kind: str
@@ -32,6 +35,7 @@ class Token:
     column: int
 
 
+# one lexical error: where it is and which character caused it
 @dataclass(frozen=True)
 class LexError:
     line: int
@@ -46,18 +50,18 @@ class Scanner:
     def __init__(self, table_path):
         with open(table_path, newline="", encoding="utf-8") as stream:
             reader = csv.DictReader(stream)
-            self.header = reader.fieldnames          # state, <character classes...>, token
+            self.header = reader.fieldnames          # first = state, last = token, the middle ones = character classes
             self.rows = list(reader)
         classes = self.header[1:-1]
         self.table = {(row["state"], c): row[c] for row in self.rows for c in classes}
-        self.accepts = {row["state"]: row["token"] for row in self.rows}   # state -> token kind
+        self.accepts = {row["state"]: row["token"] for row in self.rows}   # which token each accepting state gives
 
     def scan(self, source):
-        """Return (tokens, errors). Scanning continues after every error."""
+        """Go through the source code and return (tokens, errors). It keeps going after an error."""
         tokens, errors = [], []
         pos, line, column = 0, 1, 1
         while pos < len(source):
-            # Run the DFA from q0 as far as the table allows (longest match).
+            # start from q0 and keep moving while the table has a next state (so we get the longest match)
             state, end = START, pos
             while end < len(source):
                 next_state = self.table.get((state, CHAR_CLASS.get(source[end], "other")), DEAD)
@@ -65,11 +69,12 @@ class Scanner:
                     break
                 state, end = next_state, end + 1
 
-            if end == pos:                                   # q0 has no move: illegal character
+            if end == pos:                                   # we did not move at all, so this character is illegal
                 errors.append(LexError(line, column, source[pos]))
                 end = pos + 1
-            elif self.accepts[state] != SKIP:                # whitespace is dropped
+            elif self.accepts[state] != SKIP:                # whitespace is not a token
                 lexeme = source[pos:end]
+                # if the word is a keyword (int, if) use the keyword kind, otherwise use the kind from the table
                 tokens.append(Token(KEYWORDS.get(lexeme, self.accepts[state]), lexeme, line, column))
 
             line, column = self._advance(source[pos:end], line, column)
@@ -78,6 +83,7 @@ class Scanner:
 
     @staticmethod
     def _advance(text, line, column):
+        # move line and column forward over the text we just read
         for char in text:
             line, column = (line + 1, 1) if char == "\n" else (line, column + 1)
         return line, column

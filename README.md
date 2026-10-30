@@ -9,7 +9,6 @@
 ```
 python ui.py                          # رابط گرافیکی
 python scanner.py samples/valid.ns    # اجرا در ترمینال
-python -m unittest -v                 # تست‌ها
 ```
 
 به نصب چیزی نیاز نیست. اگر `python` کار نکرد، `python3` یا `py` را امتحان کنید.
@@ -19,7 +18,6 @@ python -m unittest -v                 # تست‌ها
 - `scanner.py`: اسکنر
 - `transition_table.csv`: جدول انتقال DFA
 - `ui.py`: رابط گرافیکی
-- `test_scanner.py`: تست‌ها
 - `nfa_dfa.md`: عبارت منظم، NFA و تبدیل آن به DFA
 - `nfa.dot`, `dfa.dot`: شکل NFA و DFA (تصویرشان در پوشه `diagrams`)
 - `samples/`: برنامه‌های تست. سه فایل `valid`, `arithmetic`, `identifiers` بدون خطا هستند و دو فایل `invalid`, `errors` خطای لغوی دارند.
